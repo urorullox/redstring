@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // --- KONFIGURASI MUSIK ---
 const MUSIC_URL = "/love.mp3"; 
 
-// --- DATA 27 ALASAN CINTA (FULL CUSTOM) ---
+// --- DATA 27 ALASAN CINTA ---
 const fullLoveReasons = [
   {
     id: 1,
@@ -358,7 +358,7 @@ const WavyStringContent = ({ reasons, unlockedCount, onKnotClick, showLetter }) 
   const itemHeight = 300; 
   const xAmplitudeMobile = 80;
   const xAmplitudeDesktop = 200; 
-  const startY = 120; // MENAMBAH JARAK ATAS (SOLUSI TERPOTONG)
+  const startY = 150; // Increased spacing from top
   
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1000);
   
@@ -374,12 +374,11 @@ const WavyStringContent = ({ reasons, unlockedCount, onKnotClick, showLetter }) 
   const totalHeight = (reasons.length * itemHeight) + (showLetter ? 1200 : 400); 
 
   const generatePath = (limitIndex) => {
-    let path = `M ${centerX} ${startY}`; // START DARI Y=120
+    let path = `M ${centerX} ${startY}`;
     for (let i = 0; i < limitIndex; i++) {
         const currentY = startY + (i * itemHeight);
         const nextY = startY + ((i + 1) * itemHeight);
         
-        // Logika Zig-Zag
         const currentX = i === 0 ? centerX : (centerX + (i % 2 === 0 ? -amplitude : amplitude));
         const nextX = centerX + ((i + 1) % 2 === 0 ? -amplitude : amplitude);
         
@@ -425,7 +424,7 @@ const WavyStringContent = ({ reasons, unlockedCount, onKnotClick, showLetter }) 
       {/* CONTENT ITEMS */}
       {reasons.map((item, i) => {
         const isCenter = i === 0;
-        const isRightNode = i % 2 !== 0; // Ganjil = Node Kanan
+        const isRightNode = i % 2 !== 0; 
         
         const nodeX = isCenter ? centerX : (centerX + (isRightNode ? amplitude : -amplitude));
         const nodeY = startY + (i * itemHeight);
@@ -437,62 +436,38 @@ const WavyStringContent = ({ reasons, unlockedCount, onKnotClick, showLetter }) 
 
         const isLocked = !isUnlocked && !isNextToUnlock;
 
-        // --- PERBAIKAN LOGIKA POSISI KARTU ---
         let cardStyle = {};
 
-        // 1. KARTU PERTAMA (Center)
-        // Pastikan di tengah layar viewport (windowWidth/2) BUKAN parent div
-        if (isCenter) {
-             cardStyle = {
-                 position: 'absolute',
-                 // Center relative to the screen (viewport)
-                 // Parent div is at (nodeX, nodeY). nodeX is center.
-                 // So left: 50vw - nodeX centers it to screen.
-                 // Then transform moves it back by 50% of its own width.
-                 left: `calc(50vw - ${nodeX}px)`, 
-                 transform: 'translateX(-50%)',
-                 
-                 top: isMobile ? '3.5rem' : '4rem',
-                 width: '85vw',
-                 maxWidth: '350px',
-                 textAlign: 'center',
-                 zIndex: 50
-             };
+        if (isMobile) {
+            // MOBILE: FORCE CENTER ABSOLUTELY
+            // Using logic relative to parent at nodeX to find exact screen center
+            cardStyle = {
+                position: 'absolute',
+                left: `calc(50vw - ${nodeX}px)`, // Shifts origin to screen center
+                top: '3.5rem',
+                width: '85vw',
+                maxWidth: '350px',
+                transform: 'translateX(-50%)', // Centers the card on screen center
+                textAlign: 'center',
+                zIndex: 50
+            };
         } else {
-             // 2. KARTU LAINNYA
-             if (isMobile) {
-                // FORCE CENTER ON MOBILE
-                // Ini solusi paling aman untuk HP agar tidak terpotong kiri/kanan.
-                // Apapun posisi benang (kiri/kanan), kartu teks selalu di tengah layar.
-                cardStyle = {
-                    position: 'absolute',
-                    // Trik centering absolute relative to parent offset
-                    left: `calc(50vw - ${nodeX}px)`, 
-                    transform: 'translateX(-50%)',
-                    
-                    top: '2.5rem', 
-                    width: '90vw',
-                    maxWidth: '350px',
-                    textAlign: 'center',
-                    zIndex: 50
-                };
-             } else {
-                // Desktop: Kiri/Kanan logic
-                cardStyle = {
-                    position: 'absolute',
-                    top: '-2rem',
-                    width: '320px',
-                    [isRightNode ? 'right' : 'left']: '3rem',
-                    textAlign: isRightNode ? 'right' : 'left',
-                    zIndex: 50
-                };
-             }
+            // DESKTOP: Side by Side
+            cardStyle = {
+                position: 'absolute',
+                top: '-2rem',
+                width: '320px',
+                [isRightNode ? 'right' : 'left']: '3rem',
+                textAlign: isRightNode ? 'right' : 'left',
+                zIndex: 50
+            };
         }
 
         return (
           <div 
             key={item.id}
-            className="absolute transform -translate-x-1/2 -translate-y-1/2"
+            // WRAPPER 0-PIXEL SIZE: Crucial for accurate positioning
+            className="absolute flex items-center justify-center w-0 h-0"
             style={{ left: nodeX, top: nodeY }}
           >
             {/* SIMPUL / KNOT */}
