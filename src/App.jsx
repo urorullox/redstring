@@ -8,10 +8,6 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- KONFIGURASI MUSIK ---
-// UNTUK DEPLOY: 
-// 1. Simpan file lagu (misal: 'elvis.mp3') di folder 'public' project kamu.
-// 2. Ubah variable di bawah ini menjadi: "/elvis.mp3"
-// 3. Atau gunakan link direct URL jika ada.
 const MUSIC_URL = "/love.mp3"; 
 
 // --- DATA 27 ALASAN CINTA (FULL CUSTOM) ---
@@ -194,7 +190,6 @@ const App = () => {
   
   const audioRef = useRef(null);
 
-  // Set Page Title
   useEffect(() => {
     document.title = "For Khairunnisa | The Red String";
   }, []);
@@ -220,7 +215,6 @@ const App = () => {
   };
 
   const handleKnotClick = (index) => {
-    // Jika simpul terakhir diklik
     if (index === fullLoveReasons.length - 1 && unlockedCount === fullLoveReasons.length) {
        setShowLetter(true);
        setTimeout(() => {
@@ -230,7 +224,6 @@ const App = () => {
         }
       }, 500);
     } 
-    // Jika simpul biasa
     else if (index === unlockedCount) {
       const nextCount = unlockedCount + 1;
       setUnlockedCount(nextCount);
@@ -364,7 +357,7 @@ const OpeningScreen = ({ onStart, audioError }) => {
 
 const WavyStringContent = ({ reasons, unlockedCount, onKnotClick, showLetter }) => {
   const itemHeight = 300; 
-  const xAmplitudeMobile = 100;
+  const xAmplitudeMobile = 80; // Diperkecil agar ada ruang untuk teks di samping
   const xAmplitudeDesktop = 200; 
   
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1000);
@@ -386,6 +379,10 @@ const WavyStringContent = ({ reasons, unlockedCount, onKnotClick, showLetter }) 
         const currentY = 50 + (i * itemHeight);
         const nextY = 50 + ((i + 1) * itemHeight);
         
+        // Logika Zig-Zag: 
+        // i=0 (Start) -> Center
+        // i=1 (Ganjil) -> Kanan (Center + Amp)
+        // i=2 (Genap) -> Kiri (Center - Amp)
         const currentX = i === 0 ? centerX : (centerX + (i % 2 === 0 ? -amplitude : amplitude));
         const nextX = centerX + ((i + 1) % 2 === 0 ? -amplitude : amplitude);
         
@@ -431,7 +428,7 @@ const WavyStringContent = ({ reasons, unlockedCount, onKnotClick, showLetter }) 
       {/* CONTENT ITEMS */}
       {reasons.map((item, i) => {
         const isCenter = i === 0;
-        const isRightNode = i % 2 !== 0; 
+        const isRightNode = i % 2 !== 0; // Jika Index Ganjil, Node ada di KANAN
         
         const nodeX = isCenter ? centerX : (centerX + (isRightNode ? amplitude : -amplitude));
         const nodeY = 50 + (i * itemHeight);
@@ -443,23 +440,37 @@ const WavyStringContent = ({ reasons, unlockedCount, onKnotClick, showLetter }) 
 
         const isLocked = !isUnlocked && !isNextToUnlock;
 
-        const mobileStyle = {
-            position: 'fixed', 
-            left: `calc(50vw - ${nodeX}px)`, 
-            top: '3.5rem', 
-            width: '90vw',
-            maxWidth: '350px',
-            transform: 'translateX(-50%)',
-            margin: 0
-        };
+        // --- PERBAIKAN STYLING ---
+        // Jika Node Kanan -> Kartu di Kiri (right property)
+        // Jika Node Kiri -> Kartu di Kanan (left property)
+        // Pengecualian: Item pertama (i=0) tetap di tengah.
+        
+        let cardStyle = {};
 
-        const desktopStyle = {
-            top: '-2rem', 
-            [isRightNode ? 'right' : 'left']: '3rem', 
-            textAlign: isRightNode ? 'right' : 'left',
-            width: '320px',
-            transform: 'none'
-        };
+        if (isCenter) {
+             // Item pertama di tengah
+             cardStyle = {
+                 position: 'absolute',
+                 left: '50%',
+                 transform: 'translateX(-50%)',
+                 top: isMobile ? '3rem' : '4rem',
+                 width: isMobile ? '90vw' : '320px',
+                 maxWidth: '350px',
+                 textAlign: 'center'
+             };
+        } else {
+             // Item selanjutnya Zig-Zag
+             cardStyle = {
+                 position: 'absolute',
+                 top: isMobile ? '-1rem' : '-2rem', 
+                 // Gunakan Absolute Positioning, BUKAN Fixed
+                 width: isMobile ? '160px' : '320px', 
+                 // Di HP lebar lebih kecil agar muat di sisa layar
+                 [isRightNode ? 'right' : 'left']: isMobile ? '1.5rem' : '3rem',
+                 textAlign: isRightNode ? 'right' : 'left',
+                 zIndex: 50
+             };
+        }
 
         return (
           <div 
@@ -496,20 +507,21 @@ const WavyStringContent = ({ reasons, unlockedCount, onKnotClick, showLetter }) 
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         transition={{ duration: 0.6, ease: "easeOut" }}
                         className={`
-                            absolute p-5 rounded-xl border border-red-900/40 bg-[#150202]/95 backdrop-blur-md shadow-2xl z-10
+                            absolute p-4 md:p-5 rounded-xl border border-red-900/40 bg-[#150202]/95 backdrop-blur-md shadow-2xl z-10
                             flex flex-col gap-2
                         `}
-                        style={isMobile ? mobileStyle : desktopStyle}
+                        style={cardStyle}
                     >
-                         {!isMobile && (
+                         {/* Garis Penghubung (Hanya Desktop) */}
+                         {!isMobile && !isCenter && (
                             <div className={`absolute top-8 w-12 h-[1px] bg-red-500/30 ${isRightNode ? '-right-12' : '-left-12'}`} />
                         )}
 
-                        <div className={`flex flex-col gap-2 ${isMobile ? 'items-center text-center' : (isRightNode ? 'items-end' : 'items-start')}`}>
+                        <div className={`flex flex-col gap-2 ${isCenter ? 'items-center' : (isRightNode ? 'items-end' : 'items-start')}`}>
                             <div className="p-2 bg-red-900/20 rounded-full w-fit mb-1">
                                 {item.icon}
                             </div>
-                            <h3 className="text-red-200 font-bold text-lg tracking-wide font-serif">{item.title}</h3>
+                            <h3 className="text-red-200 font-bold text-lg tracking-wide font-serif leading-tight">{item.title}</h3>
                             <p className="text-rose-100/70 text-sm leading-relaxed font-light">
                                 {item.text}
                             </p>
