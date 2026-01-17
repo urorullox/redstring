@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Heart, Music, Stars, Sparkles, Volume2, VolumeX, Gift, Smile, Sun, Moon, 
@@ -10,7 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // --- KONFIGURASI MUSIK ---
 const MUSIC_URL = "/love.mp3"; 
 
-// --- DATA 27 ALASAN CINTA ---
+// --- DATA 27 ALASAN CINTA (FULL CUSTOM) ---
 const fullLoveReasons = [
   {
     id: 1,
@@ -176,6 +177,7 @@ const fullLoveReasons = [
   }
 ];
 
+// Custom Icon wrapper
 function StarIconCustom() {
     return <Stars className="w-6 h-6 text-yellow-200" />;
 }
@@ -356,9 +358,8 @@ const OpeningScreen = ({ onStart, audioError }) => {
 
 const WavyStringContent = ({ reasons, unlockedCount, onKnotClick, showLetter }) => {
   const itemHeight = 300; 
-  const xAmplitudeMobile = 80;
+  const xAmplitudeMobile = 80; // Diperkecil agar ada ruang untuk teks di samping
   const xAmplitudeDesktop = 200; 
-  const startY = 150; // Increased spacing from top
   
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1000);
   
@@ -374,11 +375,15 @@ const WavyStringContent = ({ reasons, unlockedCount, onKnotClick, showLetter }) 
   const totalHeight = (reasons.length * itemHeight) + (showLetter ? 1200 : 400); 
 
   const generatePath = (limitIndex) => {
-    let path = `M ${centerX} ${startY}`;
+    let path = `M ${centerX} 50`; 
     for (let i = 0; i < limitIndex; i++) {
-        const currentY = startY + (i * itemHeight);
-        const nextY = startY + ((i + 1) * itemHeight);
+        const currentY = 50 + (i * itemHeight);
+        const nextY = 50 + ((i + 1) * itemHeight);
         
+        // Logika Zig-Zag: 
+        // i=0 (Start) -> Center
+        // i=1 (Ganjil) -> Kanan (Center + Amp)
+        // i=2 (Genap) -> Kiri (Center - Amp)
         const currentX = i === 0 ? centerX : (centerX + (i % 2 === 0 ? -amplitude : amplitude));
         const nextX = centerX + ((i + 1) % 2 === 0 ? -amplitude : amplitude);
         
@@ -424,10 +429,10 @@ const WavyStringContent = ({ reasons, unlockedCount, onKnotClick, showLetter }) 
       {/* CONTENT ITEMS */}
       {reasons.map((item, i) => {
         const isCenter = i === 0;
-        const isRightNode = i % 2 !== 0; 
+        const isRightNode = i % 2 !== 0; // Jika Index Ganjil, Node ada di KANAN
         
         const nodeX = isCenter ? centerX : (centerX + (isRightNode ? amplitude : -amplitude));
-        const nodeY = startY + (i * itemHeight);
+        const nodeY = 50 + (i * itemHeight);
         
         const isUnlocked = showLetter || i < unlockedCount;
         const isNextToUnlock = !showLetter && i === unlockedCount;
@@ -436,38 +441,42 @@ const WavyStringContent = ({ reasons, unlockedCount, onKnotClick, showLetter }) 
 
         const isLocked = !isUnlocked && !isNextToUnlock;
 
+        // --- PERBAIKAN STYLING ---
+        // Jika Node Kanan -> Kartu di Kiri (right property)
+        // Jika Node Kiri -> Kartu di Kanan (left property)
+        // Pengecualian: Item pertama (i=0) tetap di tengah.
+        
         let cardStyle = {};
 
-        if (isMobile) {
-            // MOBILE: FORCE CENTER ABSOLUTELY
-            // Using logic relative to parent at nodeX to find exact screen center
-            cardStyle = {
-                position: 'absolute',
-                left: `calc(50vw - ${nodeX}px)`, // Shifts origin to screen center
-                top: '3.5rem',
-                width: '85vw',
-                maxWidth: '350px',
-                transform: 'translateX(-50%)', // Centers the card on screen center
-                textAlign: 'center',
-                zIndex: 50
-            };
+        if (isCenter) {
+             // Item pertama di tengah
+             cardStyle = {
+                 position: 'absolute',
+                 left: '50%',
+                 transform: 'translateX(-50%)',
+                 top: isMobile ? '3rem' : '4rem',
+                 width: isMobile ? '90vw' : '320px',
+                 maxWidth: '350px',
+                 textAlign: 'center'
+             };
         } else {
-            // DESKTOP: Side by Side
-            cardStyle = {
-                position: 'absolute',
-                top: '-2rem',
-                width: '320px',
-                [isRightNode ? 'right' : 'left']: '3rem',
-                textAlign: isRightNode ? 'right' : 'left',
-                zIndex: 50
-            };
+             // Item selanjutnya Zig-Zag
+             cardStyle = {
+                 position: 'absolute',
+                 top: isMobile ? '-1rem' : '-2rem', 
+                 // Gunakan Absolute Positioning, BUKAN Fixed
+                 width: isMobile ? '160px' : '320px', 
+                 // Di HP lebar lebih kecil agar muat di sisa layar
+                 [isRightNode ? 'right' : 'left']: isMobile ? '1.5rem' : '3rem',
+                 textAlign: isRightNode ? 'right' : 'left',
+                 zIndex: 50
+             };
         }
 
         return (
           <div 
             key={item.id}
-            // WRAPPER 0-PIXEL SIZE: Crucial for accurate positioning
-            className="absolute flex items-center justify-center w-0 h-0"
+            className="absolute transform -translate-x-1/2 -translate-y-1/2"
             style={{ left: nodeX, top: nodeY }}
           >
             {/* SIMPUL / KNOT */}
@@ -499,16 +508,17 @@ const WavyStringContent = ({ reasons, unlockedCount, onKnotClick, showLetter }) 
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         transition={{ duration: 0.6, ease: "easeOut" }}
                         className={`
-                            absolute p-5 rounded-xl border border-red-900/40 bg-[#150202]/95 backdrop-blur-md shadow-2xl z-10
+                            absolute p-4 md:p-5 rounded-xl border border-red-900/40 bg-[#150202]/95 backdrop-blur-md shadow-2xl z-10
                             flex flex-col gap-2
                         `}
                         style={cardStyle}
                     >
-                        {!isMobile && !isCenter && (
+                         {/* Garis Penghubung (Hanya Desktop) */}
+                         {!isMobile && !isCenter && (
                             <div className={`absolute top-8 w-12 h-[1px] bg-red-500/30 ${isRightNode ? '-right-12' : '-left-12'}`} />
                         )}
 
-                        <div className={`flex flex-col gap-2 ${isCenter || isMobile ? 'items-center text-center' : (isRightNode ? 'items-end' : 'items-start')}`}>
+                        <div className={`flex flex-col gap-2 ${isCenter ? 'items-center' : (isRightNode ? 'items-end' : 'items-start')}`}>
                             <div className="p-2 bg-red-900/20 rounded-full w-fit mb-1">
                                 {item.icon}
                             </div>
@@ -549,6 +559,7 @@ const WavyStringContent = ({ reasons, unlockedCount, onKnotClick, showLetter }) 
                 style={{ top: (reasons.length * itemHeight) + 100 }}
             >
                 <div className="max-w-2xl w-full bg-[#1a0505] border border-red-900/50 p-8 md:p-12 rounded-lg shadow-[0_0_50px_rgba(139,0,0,0.2)] relative overflow-hidden">
+                    {/* Decorative Elements */}
                     <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-transparent via-red-800 to-transparent" />
                     <Feather className="absolute top-6 right-6 text-red-900/20 w-24 h-24 rotate-12" />
                     
@@ -562,7 +573,9 @@ const WavyStringContent = ({ reasons, unlockedCount, onKnotClick, showLetter }) 
                         <h2 className="text-3xl md:text-4xl font-serif text-[#ff4d4d] mb-6">Untuk Khairunnisa</h2>
                         
                         <div className="text-rose-100/90 space-y-6 text-justify md:text-center leading-loose font-light text-sm md:text-base">
-                            <p>Assalamu'alaikum, Khairunnisa-ku...</p>
+                            <p>
+                                Assalamu'alaikum, Khairunnisa-ku...
+                            </p>
                             <p>
                                 Tulisan ini Kaka rangkai khusus untuk satu nama yang telah mengubah segalanya. 
                                 Pertama-tama, Kaka ingin Ade tahu betapa bangganya Kaka melihat sosok Ade hari ini. 
