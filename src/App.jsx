@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // --- KONFIGURASI MUSIK ---
 const MUSIC_URL = "/love.mp3"; 
 
-// --- DATA 27 ALASAN CINTA ---
+// --- DATA 27 ALASAN CINTA (FULL CUSTOM) ---
 const fullLoveReasons = [
   {
     id: 1,
@@ -440,46 +440,48 @@ const WavyStringContent = ({ reasons, unlockedCount, onKnotClick, showLetter }) 
         // --- PERBAIKAN LOGIKA POSISI KARTU ---
         let cardStyle = {};
 
-        // Kartu Pertama (Center): Pastikan lebar aman dan di tengah
+        // 1. KARTU PERTAMA (Center)
+        // Pastikan di tengah layar viewport (windowWidth/2) BUKAN parent div
         if (isCenter) {
              cardStyle = {
                  position: 'absolute',
-                 left: '50%',
+                 // Center relative to the screen (viewport)
+                 // Parent div is at (nodeX, nodeY). nodeX is center.
+                 // So left: 50vw - nodeX centers it to screen.
+                 // Then transform moves it back by 50% of its own width.
+                 left: `calc(50vw - ${nodeX}px)`, 
                  transform: 'translateX(-50%)',
+                 
                  top: isMobile ? '3.5rem' : '4rem',
-                 width: '85vw', // Menggunakan width fluid agar tidak terpotong
+                 width: '85vw',
                  maxWidth: '350px',
                  textAlign: 'center',
                  zIndex: 50
              };
         } else {
-             // Logika: 
-             // Jika String ke KANAN (node kanan) -> Teks di KIRI
-             // Jika String ke KIRI (node kiri) -> Teks di KANAN
-             
-             // Di HP, kita tetap menggunakan centering jika teks terlalu panjang,
-             // tapi kita coba geser sedikit agar sesuai permintaan "kiri/kanan".
-             
+             // 2. KARTU LAINNYA
              if (isMobile) {
-                // Versi Mobile yang AMAN (Tengah, tapi sedikit geser visual)
-                // Kita gunakan absolute center agar teks panjang tidak pernah terpotong layar
+                // FORCE CENTER ON MOBILE
+                // Ini solusi paling aman untuk HP agar tidak terpotong kiri/kanan.
+                // Apapun posisi benang (kiri/kanan), kartu teks selalu di tengah layar.
                 cardStyle = {
                     position: 'absolute',
-                    left: '50%',
+                    // Trik centering absolute relative to parent offset
+                    left: `calc(50vw - ${nodeX}px)`, 
                     transform: 'translateX(-50%)',
-                    top: '2.5rem', // Di bawah simpul
-                    width: '85vw', // Lebar aman
-                    maxWidth: '300px',
-                    textAlign: 'center', // Teks rata tengah agar rapi di HP
+                    
+                    top: '2.5rem', 
+                    width: '90vw',
+                    maxWidth: '350px',
+                    textAlign: 'center',
                     zIndex: 50
                 };
              } else {
-                // Versi Desktop (Sesuai Request Kiri/Kanan)
+                // Desktop: Kiri/Kanan logic
                 cardStyle = {
                     position: 'absolute',
                     top: '-2rem',
                     width: '320px',
-                    // Jika Node Kanan -> Kartu Kiri (Right property set)
                     [isRightNode ? 'right' : 'left']: '3rem',
                     textAlign: isRightNode ? 'right' : 'left',
                     zIndex: 50
